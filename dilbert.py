@@ -12,6 +12,15 @@ from bs4 import BeautifulSoup
 
 http = urllib3.PoolManager()
 
+
+outfile = "dilbert.xml"
+stripcount = 10
+
+if len(sys.argv) > 1:
+    outfile = sys.argv[1]
+    if len(sys.argv) > 2:
+        stripcount = sys.argv[2]
+
 def getDetails(url, baseURL):
     request = http.request("GET", url)
     if request.status == 200:
@@ -40,7 +49,7 @@ if request.status == 200:
     nextUrl = url + soup.findAll('div', {'class': 'STR_Image' })[0].find('a')['href']
     strips = []
 
-    for i in range(0,10):
+    for i in range(0,50):
         details = getDetails(nextUrl,url)
         strips.append(details['item'])
         nextUrl = url + details['prev_href']
@@ -53,10 +62,6 @@ if request.status == 200:
         lastBuildDate = datetime.datetime.now(),
         items = strips)
 
-    if len(sys.argv) > 1:
-        outfile = sys.argv[1]
-    else:
-        outfile = "dilbert.xml"
     rss.write_xml(open(outfile, "w"))
 else:
     sys.exit(1)
