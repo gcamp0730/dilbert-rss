@@ -52,8 +52,22 @@ for i in range(0, stripcount):
             guid = PyRSS2Gen.Guid(url)
         )
         strips.append(item)
+        return results
+    else:
         progress= (i/stripcount) + (1 / stripcount)
+
+url = 'http://dilbert.com'
+request = http.request("GET", url)
+if request.status == 200:
+    page = request.data
+    soup = BeautifulSoup(page)
         print("{:.0%}".format(progress))
+    strips = []
+
+    for i in range(0,50):
+        details = getDetails(nextUrl,url)
+        strips.append(details['item'])
+        nextUrl = url + details['prev_href']
 
     # Construct RSS
     rss = PyRSS2Gen.RSS2(
@@ -64,3 +78,5 @@ for i in range(0, stripcount):
         items = strips)
 
     rss.write_xml(open(outfile, "w"))
+else:
+    sys.exit(1)
