@@ -19,7 +19,11 @@ stripcount = 10
 if len(sys.argv) > 1:
 	outfile = sys.argv[1]
 	if len(sys.argv) > 2:
-		stripcount = sys.argv[2]
+		try:
+			stripcount = int(sys.argv[2])
+		except ValueError:
+			sys.exit("ERROR: stripcount must be an integer")
+		
 
 now = datetime.datetime.today()
 year = now.year
@@ -54,6 +58,8 @@ for i in range(0, stripcount):
 		strips.append(item)
 		progress= (i/stripcount) + (1 / stripcount)
 		print("{:.0%}".format(progress))
+	else:
+		sys.exit("ERROR: dilbert.com could not be contacted")
 
 	# Construct RSS
 	rss = PyRSS2Gen.RSS2(
