@@ -3,68 +3,64 @@
 """
 Dilbert RSS Feed Generator
 Requirements: BeautifulSoup4, PyRSS2Gen
-http://github.com/derintendant/dilbert-rss
+https://github.com/derintendant/dilbert-rss
 
 """
 
-import urllib3, datetime, sys, PyRSS2Gen
+import urllib3, datetime, sys, PyRSS2Gen, argparse
 from bs4 import BeautifulSoup
 
+urllib3.disable_warnings()
 http = urllib3.PoolManager()
+parser = argparse.ArgumentParser()
 
+parser.add_argument("outfile", nargs="?", default="dilbert.xml", help="Write the RSS output to this file")
+parser.add_argument("stripcount", type=int, nargs="?", default="10", help="Number of days to parse")
+parser.add_argument("--debug", action="store_true", help="Turn on debug mode")
+args = parser.parse_args()
 
-outfile = "dilbert.xml"
-stripcount = 10
+debug = args.debug
+outfile = args.outfile
+stripcount = args.stripcount
 
-if len(sys.argv) > 1:
-	outfile = sys.argv[1]
-	if len(sys.argv) > 2:
-		try:
-			stripcount = int(sys.argv[2])
-		except ValueError:
-			sys.exit("ERROR: stripcount must be an integer")
-		
+if debug:
+	print("Will fetch {:d} comics and store in {:s}".format(stripcount,outfile))
 
 now = datetime.datetime.today()
-year = now.year
-month = now.month
-day = now.day
 
 strips = []
 
 for i in range(0, stripcount):
 	timedelta = datetime.timedelta(days=i)
 	currentDate = (now - timedelta)
-	currentDay = currentDate.day
-	currentMonth = currentDate.month
-	currentYear = currentDate.year
 
-	url = "http://dilbert.com/strip/" + str(year) + "-" + str(month) + "-" + str(currentDay)
+	url = "https://dilbert.com/strip/" + currentDate.strftime("%Y-%m-%d")
 	request = http.request("GET", url)
 
 	if request.status == 200:
 		page = request.data
-		soup = BeautifulSoup(page)
+		soup = BeautifulSoup(page, "html5lib")
 
 		imageURL = soup.find_all('img', {'class':'img-comic'}, limit=1)[0]['src']
 
 		item = PyRSS2Gen.RSSItem(
-			title = 'Comic for ' + str(currentYear) + '/' + str(currentMonth) + '/' + str(currentDay),
-			description = "<a href='" + url + "'><img src='" + imageURL + "' /></a>",
-			pubDate = currentDate,
+			title = 'Comic for ' + currentDate.strftime("%B %d, %Y"),
+			description = "<a href='" + url + "'><img src='https:" + imageURL + "' /></a>",
+			pubDate = currentDate.strftime("%B %d, %Y"),
 			link = url,
 			guid = PyRSS2Gen.Guid(url)
 		)
 		strips.append(item)
-		progress= (i/stripcount) + (1 / stripcount)
-		print("{:.0%}".format(progress))
+		if debug:
+			progress = (float(i)/float(stripcount) + 1.0/float(stripcount)) * 100.0
+			print("{:.0f}%".format(progress))
 	else:
 		sys.exit("ERROR: dilbert.com could not be contacted")
 
 	# Construct RSS
 	rss = PyRSS2Gen.RSS2(
 		title = "Dilbert Daily Strip",
-		link = "http://dilbert.com",
+		link = "https://dilbert.com",
 		description = "An unofficial RSS feed for dilbert.com.",
 		lastBuildDate = now,
 		items = strips)
