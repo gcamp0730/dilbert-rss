@@ -42,10 +42,14 @@ for i in range(0, stripcount):
 		soup = BeautifulSoup(page, "html5lib")
 
 		imageURL = soup.find_all('img', {'class':'img-comic'}, limit=1)[0]['src']
+ 		if currentDate.weekday() == 6:
+ 			img_type = ".jpg"
+ 		else:
+ 			img_type = ""
 
 		item = PyRSS2Gen.RSSItem(
 			title = 'Comic for ' + currentDate.strftime("%B %d, %Y"),
-			description = "<a href='" + url + "'><img src='https:" + imageURL + "' /></a>",
+			description = "<a href='" + url + "'><img src='" + imageURL + img_type + "' /></a>",
 			pubDate = currentDate.strftime("%B %d, %Y"),
 			link = url,
 			guid = PyRSS2Gen.Guid(url)
